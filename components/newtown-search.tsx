@@ -188,7 +188,7 @@ export function NewTownSearch({
     <div className="space-y-6">
       {/* 검색 카드 */}
       <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm">
-        <CardHeader className="pb-4">
+        <CardHeader className="pb-1">
           <CardTitle className="text-xl font-bold text-gray-800">전국 신도시/택지개발지구 건축허가 및 착공 현장</CardTitle>
           <p className="text-gray-600 leading-relaxed">
             전국 신도시 및 택지개발지구 내 건축허가 및 착공된 사업을 조회합니다.
@@ -198,6 +198,10 @@ export function NewTownSearch({
         <CardContent className="space-y-4">
           {/* 검색 버튼 */}
           <div className="flex justify-center">
+          </div>
+
+          {/* 필터 및 정렬 */}
+          <div className="flex flex-wrap items-center gap-4">
             <Button 
               onClick={onSearch} 
               disabled={isLoading}
@@ -210,10 +214,6 @@ export function NewTownSearch({
               )}
               {isLoading ? '조회 중...' : '전체 현장 조회'}
             </Button>
-          </div>
-
-          {/* 필터 및 정렬 */}
-          <div className="flex flex-wrap items-center gap-4 pt-4 border-t">
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-gray-500" />
               <Select value={completionFilter} onValueChange={onCompletionFilterChange}>

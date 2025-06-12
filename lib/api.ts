@@ -715,5 +715,514 @@ export async function fetchSiteDetails(projectId: string) {
   }
 }
 
+// KISCON API 관련 타입
+export interface KisconCompanyInfo {
+  businessNumber: string
+  ceoName: string
+  companyAddress: string
+  registeredTypes: string[]
+  licenseInfo: {
+    licenseNumber: string
+    registrationDate: string
+    expiryDate: string
+  }
+  recentProjects: Array<{
+    projectName: string
+    client: string
+    contractAmount: number
+    completionDate: string
+  }>
+}
+
+export interface KisconStatistics {
+  monthlyData: Array<{
+    month: string
+    reportCount: number
+    contractAmount: number
+  }>
+  typeAnalysis: Array<{
+    type: string
+    count: number
+    percentage: number
+  }>
+}
+
+// 생활안전지도 API 관련 타입
+export interface SafetyMapInfo {
+  hazardousFacilities: Array<{
+    type: string
+    name: string
+    distance: number
+    riskLevel: 'high' | 'medium' | 'low'
+    coordinates: { lat: number; lng: number }
+  }>
+  emergencyFacilities: Array<{
+    type: 'hospital' | 'fire_station' | 'police'
+    name: string
+    distance: number
+    accessTime: number
+    coordinates: { lat: number; lng: number }
+  }>
+  trafficInfo: {
+    congestionLevel: 'high' | 'medium' | 'low'
+    peakHours: string[]
+    alternativeRoutes: string[]
+  }
+}
+
+// 건설사업정보시스템 API 관련 타입
+export interface ConstructionSystemInfo {
+  designDocuments: Array<{
+    type: string
+    fileName: string
+    fileSize: string
+    uploadDate: string
+    downloadUrl?: string
+  }>
+  supervisionReports: Array<{
+    reportDate: string
+    progressRate: number
+    materialInspection: string
+    qualityStatus: string
+  }>
+  maintenanceHistory: Array<{
+    date: string
+    type: string
+    description: string
+    cost: number
+  }>
+  facilityInspections: Array<{
+    facility: string
+    lastInspection: string
+    nextInspection: string
+    status: 'normal' | 'attention' | 'repair_needed'
+  }>
+}
+
+// 지역별 건설현장 API 관련 타입
+export interface RegionalConstructionInfo {
+  progressInfo: {
+    currentStage: string
+    progressRate: number
+    expectedCompletion: string
+    milestones: Array<{
+      stage: string
+      plannedDate: string
+      actualDate?: string
+      status: 'completed' | 'in_progress' | 'pending'
+    }>
+  }
+  environmentalData: {
+    noise: { level: number; standard: number; status: 'normal' | 'warning' | 'violation' }
+    vibration: { level: number; standard: number; status: 'normal' | 'warning' | 'violation' }
+    dust: { level: number; standard: number; status: 'normal' | 'warning' | 'violation' }
+    lastMeasured: string
+  }
+  trafficControl: {
+    controlPlan: string
+    affectedRoads: string[]
+    alternativeRoutes: string[]
+    controlPeriod: { start: string; end: string }
+  }
+}
+
+// 통합 상세정보 타입
+export interface ComprehensiveProjectInfo {
+  kisconInfo?: KisconCompanyInfo
+  kisconStats?: KisconStatistics
+  safetyInfo?: SafetyMapInfo
+  constructionSystemInfo?: ConstructionSystemInfo
+  regionalInfo?: RegionalConstructionInfo
+  dataSources: Array<{
+    source: string
+    status: 'success' | 'failed' | 'simulation'
+    lastUpdated?: string
+    message?: string
+  }>
+}
+
+// PublicDataAPI 클래스에 새로운 메서드들 추가
+class PublicDataAPIExtended extends PublicDataAPI {
+  // KISCON 건설업체 상세정보 조회
+  async getKisconCompanyDetail(businessNumber: string): Promise<{
+    success: boolean
+    data?: KisconCompanyInfo
+    isSimulation: boolean
+    message?: string
+  }> {
+    try {
+      // 실제 KISCON API 호출 시도
+      await new Promise(resolve => setTimeout(resolve, 800))
+      
+      // 현재는 시뮬레이션 데이터 반환
+      const simulationData: KisconCompanyInfo = {
+        businessNumber: businessNumber,
+        ceoName: '김건설',
+        companyAddress: '서울특별시 강남구 테헤란로 123',
+        registeredTypes: ['토목공사업', '건축공사업', '전기공사업'],
+        licenseInfo: {
+          licenseNumber: 'KISCON-2024-001',
+          registrationDate: '2020-03-15',
+          expiryDate: '2025-03-14'
+        },
+        recentProjects: [
+          {
+            projectName: '강남 아파트 신축공사',
+            client: '서울시 강남구청',
+            contractAmount: 15000000000,
+            completionDate: '2024-06-30'
+          },
+          {
+            projectName: '교량 보수공사',
+            client: '한국도로공사',
+            contractAmount: 8500000000,
+            completionDate: '2024-03-20'
+          },
+          {
+            projectName: '학교 증축공사',
+            client: '서울시교육청',
+            contractAmount: 5200000000,
+            completionDate: '2023-12-15'
+          }
+        ]
+      }
+
+      return {
+        success: true,
+        data: simulationData,
+        isSimulation: true,
+        message: 'KISCON API 연동 대기 중 - 시뮬레이션 데이터'
+      }
+    } catch (error) {
+      return {
+        success: false,
+        isSimulation: false,
+        message: error instanceof Error ? error.message : 'KISCON 정보 조회 실패'
+      }
+    }
+  }
+
+  // KISCON 공사대장 통계 조회
+  async getKisconStatistics(region?: string): Promise<{
+    success: boolean
+    data?: KisconStatistics
+    isSimulation: boolean
+    message?: string
+  }> {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 600))
+      
+      const simulationData: KisconStatistics = {
+        monthlyData: [
+          { month: '2024-01', reportCount: 245, contractAmount: 125000000000 },
+          { month: '2024-02', reportCount: 198, contractAmount: 98000000000 },
+          { month: '2024-03', reportCount: 312, contractAmount: 156000000000 },
+          { month: '2024-04', reportCount: 287, contractAmount: 142000000000 },
+          { month: '2024-05', reportCount: 334, contractAmount: 178000000000 },
+          { month: '2024-06', reportCount: 298, contractAmount: 165000000000 }
+        ],
+        typeAnalysis: [
+          { type: '토목공사', count: 456, percentage: 35.2 },
+          { type: '건축공사', count: 389, percentage: 30.1 },
+          { type: '전기공사', count: 234, percentage: 18.1 },
+          { type: '기계설비공사', count: 156, percentage: 12.1 },
+          { type: '기타', count: 58, percentage: 4.5 }
+        ]
+      }
+
+      return {
+        success: true,
+        data: simulationData,
+        isSimulation: true,
+        message: `${region || '전국'} 지역 통계 - 시뮬레이션 데이터`
+      }
+    } catch (error) {
+      return {
+        success: false,
+        isSimulation: false,
+        message: error instanceof Error ? error.message : '통계 조회 실패'
+      }
+    }
+  }
+
+  // 생활안전지도 API 조회
+  async getSafetyMapInfo(_address: string): Promise<{
+    success: boolean
+    data?: SafetyMapInfo
+    isSimulation: boolean
+    message?: string
+  }> {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 700))
+      
+      const simulationData: SafetyMapInfo = {
+        hazardousFacilities: [
+          {
+            type: '고압가스배관',
+            name: '도시가스 주배관',
+            distance: 150,
+            riskLevel: 'medium',
+            coordinates: { lat: 37.5665, lng: 126.9780 }
+          },
+          {
+            type: '고압전선',
+            name: '송전선로 154kV',
+            distance: 320,
+            riskLevel: 'low',
+            coordinates: { lat: 37.5675, lng: 126.9790 }
+          }
+        ],
+        emergencyFacilities: [
+          {
+            type: 'hospital',
+            name: '서울대학교병원',
+            distance: 850,
+            accessTime: 12,
+            coordinates: { lat: 37.5796, lng: 126.9669 }
+          },
+          {
+            type: 'fire_station',
+            name: '종로소방서',
+            distance: 650,
+            accessTime: 8,
+            coordinates: { lat: 37.5735, lng: 126.9788 }
+          }
+        ],
+        trafficInfo: {
+          congestionLevel: 'medium',
+          peakHours: ['08:00-09:30', '18:00-19:30'],
+          alternativeRoutes: ['우회도로 A', '지하차도 B']
+        }
+      }
+
+      return {
+        success: true,
+        data: simulationData,
+        isSimulation: true,
+        message: '생활안전지도 API 연동 대기 중 - 시뮬레이션 데이터'
+      }
+    } catch (error) {
+      return {
+        success: false,
+        isSimulation: false,
+        message: error instanceof Error ? error.message : '안전정보 조회 실패'
+      }
+    }
+  }
+
+  // 건설사업정보시스템 API 조회
+  async getConstructionSystemInfo(_projectId: string): Promise<{
+    success: boolean
+    data?: ConstructionSystemInfo
+    isSimulation: boolean
+    message?: string
+  }> {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 900))
+      
+      const simulationData: ConstructionSystemInfo = {
+        designDocuments: [
+          {
+            type: '건축도면',
+            fileName: '평면도_1층.dwg',
+            fileSize: '2.3MB',
+            uploadDate: '2024-02-15'
+          },
+          {
+            type: '구조도면',
+            fileName: '구조평면도.pdf',
+            fileSize: '1.8MB',
+            uploadDate: '2024-02-20'
+          },
+          {
+            type: '설비도면',
+            fileName: '전기설비도.dwg',
+            fileSize: '3.1MB',
+            uploadDate: '2024-02-25'
+          }
+        ],
+        supervisionReports: [
+          {
+            reportDate: '2024-06-01',
+            progressRate: 65,
+            materialInspection: '적합',
+            qualityStatus: '양호'
+          },
+          {
+            reportDate: '2024-05-01',
+            progressRate: 52,
+            materialInspection: '적합',
+            qualityStatus: '양호'
+          }
+        ],
+        maintenanceHistory: [
+          {
+            date: '2024-05-15',
+            type: '외벽 보수',
+            description: '외벽 균열 보수작업',
+            cost: 2500000
+          },
+          {
+            date: '2024-03-20',
+            type: '설비 점검',
+            description: '엘리베이터 정기점검',
+            cost: 800000
+          }
+        ],
+        facilityInspections: [
+          {
+            facility: '엘리베이터',
+            lastInspection: '2024-05-30',
+            nextInspection: '2024-08-30',
+            status: 'normal'
+          },
+          {
+            facility: '소방시설',
+            lastInspection: '2024-06-10',
+            nextInspection: '2024-12-10',
+            status: 'normal'
+          }
+        ]
+      }
+
+      return {
+        success: true,
+        data: simulationData,
+        isSimulation: true,
+        message: '건설사업정보시스템 API 연동 대기 중 - 시뮬레이션 데이터'
+      }
+    } catch (error) {
+      return {
+        success: false,
+        isSimulation: false,
+        message: error instanceof Error ? error.message : '건설정보 조회 실패'
+      }
+    }
+  }
+
+  // 지역별 건설현장 API 조회
+  async getRegionalConstructionInfo(_address: string): Promise<{
+    success: boolean
+    data?: RegionalConstructionInfo
+    isSimulation: boolean
+    message?: string
+  }> {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 750))
+      
+      const simulationData: RegionalConstructionInfo = {
+        progressInfo: {
+          currentStage: '골조공사',
+          progressRate: 68,
+          expectedCompletion: '2025-03-30',
+          milestones: [
+            { stage: '착공', plannedDate: '2024-02-01', actualDate: '2024-02-01', status: 'completed' },
+            { stage: '기초공사', plannedDate: '2024-03-15', actualDate: '2024-03-12', status: 'completed' },
+            { stage: '골조공사', plannedDate: '2024-06-30', status: 'in_progress' },
+            { stage: '마감공사', plannedDate: '2024-11-30', status: 'pending' },
+            { stage: '준공', plannedDate: '2025-03-30', status: 'pending' }
+          ]
+        },
+        environmentalData: {
+          noise: { level: 62, standard: 65, status: 'normal' },
+          vibration: { level: 58, standard: 60, status: 'normal' },
+          dust: { level: 78, standard: 80, status: 'warning' },
+          lastMeasured: '2024-06-12 14:30'
+        },
+        trafficControl: {
+          controlPlan: '편도 1차로 통제',
+          affectedRoads: ['메인도로 A', '진입로 B'],
+          alternativeRoutes: ['우회도로 C', '이면도로 D'],
+          controlPeriod: { start: '2024-06-01', end: '2024-08-31' }
+        }
+      }
+
+      return {
+        success: true,
+        data: simulationData,
+        isSimulation: true,
+        message: '지역별 건설현장 API 연동 대기 중 - 시뮬레이션 데이터'
+      }
+    } catch (error) {
+      return {
+        success: false,
+        isSimulation: false,
+        message: error instanceof Error ? error.message : '지역정보 조회 실패'
+      }
+    }
+  }
+
+  // 통합 상세정보 조회
+  async getComprehensiveProjectDetail(projectId: string, address: string, businessNumber?: string): Promise<{
+    success: boolean
+    data?: ComprehensiveProjectInfo
+    message?: string
+  }> {
+    try {
+      const [kisconInfo, kisconStats, safetyInfo, constructionInfo, regionalInfo] = await Promise.all([
+        businessNumber ? this.getKisconCompanyDetail(businessNumber) : Promise.resolve(null),
+        this.getKisconStatistics(),
+        this.getSafetyMapInfo(address),
+        this.getConstructionSystemInfo(projectId),
+        this.getRegionalConstructionInfo(address)
+      ])
+
+      const dataSources = [
+        {
+          source: 'KISCON 건설업체정보',
+          status: kisconInfo?.success ? (kisconInfo.isSimulation ? 'simulation' : 'success') : 'failed',
+          lastUpdated: kisconInfo?.success ? new Date().toISOString() : undefined,
+          message: kisconInfo?.message
+        },
+        {
+          source: 'KISCON 공사대장통계',
+          status: kisconStats.success ? (kisconStats.isSimulation ? 'simulation' : 'success') : 'failed',
+          lastUpdated: kisconStats.success ? new Date().toISOString() : undefined,
+          message: kisconStats.message
+        },
+        {
+          source: '생활안전지도',
+          status: safetyInfo.success ? (safetyInfo.isSimulation ? 'simulation' : 'success') : 'failed',
+          lastUpdated: safetyInfo.success ? new Date().toISOString() : undefined,
+          message: safetyInfo.message
+        },
+        {
+          source: '건설사업정보시스템',
+          status: constructionInfo.success ? (constructionInfo.isSimulation ? 'simulation' : 'success') : 'failed',
+          lastUpdated: constructionInfo.success ? new Date().toISOString() : undefined,
+          message: constructionInfo.message
+        },
+        {
+          source: '지역별건설현장정보',
+          status: regionalInfo.success ? (regionalInfo.isSimulation ? 'simulation' : 'success') : 'failed',
+          lastUpdated: regionalInfo.success ? new Date().toISOString() : undefined,
+          message: regionalInfo.message
+        }
+      ] as Array<{ source: string; status: 'success' | 'failed' | 'simulation'; lastUpdated?: string; message?: string }>
+
+      return {
+        success: true,
+        data: {
+          kisconInfo: kisconInfo?.data,
+          kisconStats: kisconStats.data,
+          safetyInfo: safetyInfo.data,
+          constructionSystemInfo: constructionInfo.data,
+          regionalInfo: regionalInfo.data,
+          dataSources
+        }
+      }
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : '통합 정보 조회 실패'
+      }
+    }
+  }
+}
+
+// 확장된 API 클라이언트 인스턴스 생성
+const extendedApiKey = process.env.NEXT_PUBLIC_DATA_API_KEY || 'test-key'
+export const extendedPublicDataAPI = new PublicDataAPIExtended(extendedApiKey)
+
 // 기본 내보내기
 export default PublicDataAPI 

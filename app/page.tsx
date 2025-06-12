@@ -16,10 +16,9 @@ import { ApiStatus } from "@/components/api-status"
 // API imports
 import { 
   fetchNewTownProjects, 
-  fetchSiteDetails,
+  extendedPublicDataAPI,
   type NewTownProject,
-  type SiteManagerInfo,
-  type EngineeringTeamInfo
+  type ComprehensiveProjectInfo
 } from "@/lib/api"
 
 // 타입 정의
@@ -42,15 +41,7 @@ interface FormData {
   note: string
 }
 
-interface SiteDetails {
-  siteManager?: SiteManagerInfo
-  engineeringTeam?: EngineeringTeamInfo[]
-  architect?: SiteManagerInfo
-  safetyManager?: SiteManagerInfo
-  sources: string[]
-  isRealData: boolean
-  message?: string
-}
+// SiteDetails 인터페이스는 ComprehensiveProjectInfo로 대체됨
 
 interface SelectedProject {
   id: number | string
@@ -71,7 +62,7 @@ export default function Home() {
   // Dialog 상태
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedProject, setSelectedProject] = useState<SelectedProject | null>(null)
-  const [siteDetails, setSiteDetails] = useState<SiteDetails | null>(null)
+  const [comprehensiveInfo, setComprehensiveInfo] = useState<ComprehensiveProjectInfo | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
 
   // 폼 상태
@@ -199,11 +190,15 @@ export default function Home() {
     setDetailLoading(true)
     
     try {
-      const details = await fetchSiteDetails(project.id.toString())
-      setSiteDetails(details)
+      const details = await extendedPublicDataAPI.getComprehensiveProjectDetail(
+        project.id.toString(), 
+        project.address,
+        project.contractor // 사업자등록번호 대신 시공사명 사용
+      )
+      setComprehensiveInfo(details.data || null)
     } catch (error) {
       console.error('상세 정보 조회 실패:', error)
-      setSiteDetails(null)
+      setComprehensiveInfo(null)
       toast.error("상세 정보 조회에 실패했습니다.")
     } finally {
       setDetailLoading(false)
@@ -349,8 +344,8 @@ export default function Home() {
         <ProjectDetailDialog
           open={dialogOpen}
           onOpenChange={setDialogOpen}
-          selectedProject={selectedProject}
-          siteDetails={siteDetails}
+          project={selectedProject}
+          comprehensiveInfo={comprehensiveInfo}
           isLoading={detailLoading}
         />
       </div>
