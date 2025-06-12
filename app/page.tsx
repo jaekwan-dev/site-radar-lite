@@ -1,103 +1,359 @@
-import Image from "next/image";
+"use client"
+
+import { useState, useEffect } from "react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ChevronUp, ChevronDown } from "lucide-react"
+import { toast } from "sonner"
+
+// 컴포넌트 imports
+import { StatsDashboard } from "@/components/stats-dashboard"
+import { NewTownSearch } from "@/components/newtown-search"
+import { ManualInput } from "@/components/manual-input"
+import { TargetProjectsList } from "@/components/target-projects-list"
+import { ProjectDetailDialog } from "@/components/project-detail-dialog"
+import { ApiStatus } from "@/components/api-status"
+
+// API imports
+import { 
+  fetchNewTownProjects, 
+  fetchSiteDetails,
+  type NewTownProject,
+  type SiteManagerInfo,
+  type EngineeringTeamInfo
+} from "@/lib/api"
+
+// 타입 정의
+interface Project {
+  id: number
+  address: string
+  contractor: string
+  completionDate: string
+  contact: string
+  email: string
+  note?: string
+}
+
+interface FormData {
+  address: string
+  contractor: string
+  completionDate: string
+  contact: string
+  email: string
+  note: string
+}
+
+interface SiteDetails {
+  siteManager?: SiteManagerInfo
+  engineeringTeam?: EngineeringTeamInfo[]
+  architect?: SiteManagerInfo
+  safetyManager?: SiteManagerInfo
+  sources: string[]
+  isRealData: boolean
+  message?: string
+}
+
+interface SelectedProject {
+  id: number | string
+  projectName?: string
+  address?: string
+}
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  // 상태 관리
+  const [projects, setProjects] = useState<NewTownProject[]>([])
+  const [targetProjects, setTargetProjects] = useState<Project[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [completionFilter, setCompletionFilter] = useState("all")
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [sortField, setSortField] = useState("")
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+  
+  // Dialog 상태
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [selectedProject, setSelectedProject] = useState<SelectedProject | null>(null)
+  const [siteDetails, setSiteDetails] = useState<SiteDetails | null>(null)
+  const [detailLoading, setDetailLoading] = useState(false)
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  // 폼 상태
+  const [form, setForm] = useState<FormData>({
+    address: "",
+    contractor: "",
+    completionDate: "",
+    contact: "",
+    email: "",
+    note: ""
+  })
+
+  // 초기 데이터 로딩
+  useEffect(() => {
+    const loadInitialData = async () => {
+      setIsLoading(true)
+      try {
+        const data = await fetchNewTownProjects()
+        setProjects(data)
+        
+        // 시뮬레이션 데이터인지 확인
+        const isSimulationData = data.some(project => 
+          project.projectName?.includes('[시뮬레이션]') || 
+          project.district === '김포한강신도시'
+        )
+        
+        if (isSimulationData && data.length > 0) {
+          toast.info("시뮬레이션 데이터를 로드했습니다.\n실제 데이터를 보려면 API 키를 설정해주세요.", {
+            duration: 4000
+          })
+        }
+      } catch (error) {
+        console.error('초기 데이터 로딩 실패:', error)
+        
+        if (error instanceof Error && error.message.includes('API 키가 등록되지 않았습니다')) {
+          toast.error("API 키가 등록되지 않았습니다.\n.env.local 파일에 NEXT_PUBLIC_DATA_API_KEY를 설정해주세요.", {
+            duration: 7000
+          })
+        } else {
+          toast.error("데이터 로딩에 실패했습니다.")
+        }
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadInitialData()
+  }, [])
+
+  // localStorage에서 타겟 프로젝트 로드
+  useEffect(() => {
+    const saved = localStorage.getItem('targetProjects')
+    if (saved) {
+      setTargetProjects(JSON.parse(saved))
+    }
+  }, [])
+
+  // 타겟 프로젝트 저장
+  useEffect(() => {
+    localStorage.setItem('targetProjects', JSON.stringify(targetProjects))
+  }, [targetProjects])
+
+  // 핸들러 함수들
+  const handleSearch = async () => {
+    setIsLoading(true)
+    try {
+      const data = await fetchNewTownProjects()
+      setProjects(data)
+      
+      // 시뮬레이션 데이터인지 확인
+      const isSimulationData = data.some(project => 
+        project.projectName?.includes('[시뮬레이션]') || 
+        project.district === '김포한강신도시'
+      )
+      
+      if (isSimulationData) {
+        toast.warning(`⚠️ 시뮬레이션 데이터 ${data.length}개를 표시합니다.\n실제 데이터를 보려면 API 키를 설정해주세요.`, {
+          duration: 5000
+        })
+      } else {
+        toast.success(`${data.length}개의 현장을 조회했습니다!`)
+      }
+    } catch (error) {
+      console.error('검색 실패:', error)
+      
+      if (error instanceof Error && error.message.includes('API 키가 등록되지 않았습니다')) {
+        toast.error("API 키가 등록되지 않았습니다.\n.env.local 파일에 NEXT_PUBLIC_DATA_API_KEY를 설정해주세요.", {
+          duration: 7000
+        })
+      } else {
+        toast.error("검색에 실패했습니다.")
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleAddToTarget = (project: NewTownProject | Project) => {
+    const newProject: Project = {
+      id: Date.now(),
+      address: project.address,
+      contractor: project.contractor,
+      completionDate: project.completionDate,
+      contact: project.contact,
+      email: project.email,
+      note: 'projectName' in project ? `신도시: ${project.projectName}` : project.note
+    }
+
+    setTargetProjects(prev => [...prev, newProject])
+    
+    const projectInfo = 'projectName' in project 
+      ? `${project.contractor} - ${project.projectName}`
+      : `${project.contractor} - ${project.address}`
+    
+    toast.success(`타겟 현장에 추가되었습니다!\n${projectInfo}`)
+  }
+
+  const handleDetailView = async (project: NewTownProject) => {
+    setSelectedProject({
+      id: project.id,
+      projectName: project.projectName,
+      address: project.address
+    })
+    setDialogOpen(true)
+    setDetailLoading(true)
+    
+    try {
+      const details = await fetchSiteDetails(project.id.toString())
+      setSiteDetails(details)
+    } catch (error) {
+      console.error('상세 정보 조회 실패:', error)
+      setSiteDetails(null)
+      toast.error("상세 정보 조회에 실패했습니다.")
+    } finally {
+      setDetailLoading(false)
+    }
+  }
+
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    setForm(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleManualAdd = () => {
+    if (!form.address || !form.contractor || !form.completionDate || !form.contact || !form.email) {
+      toast.error("필수 항목을 모두 입력해주세요!")
+      return
+    }
+
+    const newProject: Project = {
+      id: Date.now(),
+      ...form
+    }
+
+    setTargetProjects(prev => [...prev, newProject])
+    setForm({
+      address: "",
+      contractor: "",
+      completionDate: "",
+      contact: "",
+      email: "",
+      note: ""
+    })
+
+    toast.success(`타겟 현장에 추가되었습니다!\n${form.contractor} - ${form.address}`)
+  }
+
+  const handleClearAll = () => {
+    setTargetProjects([])
+    toast.success("모든 타겟 현장이 삭제되었습니다!")
+  }
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDirection('asc')
+    }
+  }
+
+  const getSortIcon = (field: string) => {
+    if (sortField !== field) return null
+    return sortDirection === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
+  }
+
+  const handleStatClick = (filterType: string) => {
+    if (isLoading) return
+    
+    setCompletionFilter(filterType)
+    
+    // 스크롤을 신도시 현장 조회 섹션으로 이동
+    setTimeout(() => {
+      const element = document.getElementById('newtown-search')
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }, 100)
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="container mx-auto px-4 py-8 space-y-8">
+        {/* 헤더 */}
+        <div className="text-center space-y-4">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Site Radar Lite
+          </h1>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            건축현장 타겟 관리 도구 - 실시간 현장 정보 조회 및 타겟 현장 관리
+          </p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {/* 통계 대시보드 */}
+        <StatsDashboard 
+          projects={projects}
+          isLoading={isLoading}
+          onStatClick={handleStatClick}
+        />
+
+                 {/* API 상태 */}
+         <ApiStatus 
+           isConnected={true}
+           lastUpdate={new Date()}
+           totalRecords={projects.length}
+           onRefresh={handleSearch}
+           isLoading={isLoading}
+         />
+
+        {/* 메인 탭 */}
+        <Tabs defaultValue="search" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 bg-white/80 backdrop-blur-sm shadow-lg">
+            <TabsTrigger value="search" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              신도시 현장 조회
+            </TabsTrigger>
+            <TabsTrigger value="manual" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              수동 입력
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="search" id="newtown-search">
+            <NewTownSearch
+              projects={projects}
+              isLoading={isLoading}
+              completionFilter={completionFilter}
+              statusFilter={statusFilter}
+              sortField={sortField}
+              sortDirection={sortDirection}
+              onSearch={handleSearch}
+              onAddToTarget={handleAddToTarget}
+              onDetailView={handleDetailView}
+              onCompletionFilterChange={setCompletionFilter}
+              onStatusFilterChange={setStatusFilter}
+              onSort={handleSort}
+              getSortIcon={getSortIcon}
+            />
+          </TabsContent>
+
+          <TabsContent value="manual">
+            <ManualInput
+              form={form}
+              onFormChange={handleFormChange}
+              onAdd={handleManualAdd}
+            />
+          </TabsContent>
+        </Tabs>
+
+        {/* 타겟 현장 목록 */}
+        <TargetProjectsList
+          targetProjects={targetProjects}
+          onClearAll={handleClearAll}
+        />
+
+        {/* 상세 정보 Dialog */}
+        <ProjectDetailDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          selectedProject={selectedProject}
+          siteDetails={siteDetails}
+          isLoading={detailLoading}
+        />
+      </div>
     </div>
-  );
+  )
 }
