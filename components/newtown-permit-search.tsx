@@ -15,9 +15,7 @@ import {
   RefreshCw, 
   Building2,
   MapPin,
-  Calendar,
   AlertCircle,
-  CheckCircle,
   Filter
 } from "lucide-react"
 import { toast } from "sonner"
