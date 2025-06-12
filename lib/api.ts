@@ -524,9 +524,34 @@ class PublicDataAPI {
   }
 }
 
-// API 클라이언트 인스턴스 생성
-const apiKey = process.env.NEXT_PUBLIC_DATA_API_KEY || 'test-key'
-export const publicDataAPI = new PublicDataAPI(apiKey)
+// API 클라이언트 인스턴스 생성 (동적 API 키 지원)
+function getApiKey(): string {
+  // 브라우저 환경에서는 localStorage에서 API 키 읽기
+  if (typeof window !== 'undefined') {
+    const savedApiKey = localStorage.getItem('PUBLIC_DATA_API_KEY')
+    if (savedApiKey) {
+      return savedApiKey
+    }
+  }
+  
+  // 서버 환경이거나 저장된 키가 없는 경우 환경변수 사용
+  return process.env.NEXT_PUBLIC_DATA_API_KEY || 'test-key'
+}
+
+// API 클라이언트 인스턴스를 동적으로 생성
+export let publicDataAPI = new PublicDataAPI(getApiKey())
+
+// API 키 업데이트 함수
+export function updateApiKey(newApiKey: string) {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('PUBLIC_DATA_API_KEY', newApiKey)
+  }
+  // 새로운 API 키로 클라이언트 인스턴스 재생성
+  publicDataAPI = new PublicDataAPI(newApiKey)
+  // 확장 API 클라이언트도 업데이트
+  const extendedAPI = new PublicDataAPIExtended(newApiKey)
+  Object.assign(extendedPublicDataAPI, extendedAPI)
+}
 
 // 지역 코드 매핑
 export const REGION_CODES = {
@@ -1221,8 +1246,7 @@ class PublicDataAPIExtended extends PublicDataAPI {
 }
 
 // 확장된 API 클라이언트 인스턴스 생성
-const extendedApiKey = process.env.NEXT_PUBLIC_DATA_API_KEY || 'test-key'
-export const extendedPublicDataAPI = new PublicDataAPIExtended(extendedApiKey)
+export const extendedPublicDataAPI = new PublicDataAPIExtended(getApiKey())
 
 // 기본 내보내기
 export default PublicDataAPI 

@@ -294,10 +294,10 @@ export default function SimulatorPage() {
         {/* 헤더 */}
         <div className="text-center space-y-4">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Site Radar Lite
+            Site Radar Lite - 시뮬레이터
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            건축현장 타겟 관리 도구 - 실시간 현장 정보 조회 및 타겟 현장 관리
+            건축현장 타겟 관리 도구 - 실시간 현장 정보 조회 및 타겟 현장 관리 (시뮬레이션 데이터)
           </p>
         </div>
 

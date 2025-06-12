@@ -4,13 +4,14 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Wifi, WifiOff, RefreshCw, Database, Clock, CheckCircle } from "lucide-react"
+import { Wifi, WifiOff, RefreshCw, Database, Clock, CheckCircle, Key } from "lucide-react"
 
 interface ApiStatusProps {
   isConnected?: boolean
   lastUpdate?: Date
   totalRecords?: number
   onRefresh?: () => void
+  onOpenApiKeyDialog?: () => void
   isLoading?: boolean
 }
 
@@ -19,6 +20,7 @@ export function ApiStatus({
   lastUpdate = new Date(), 
   totalRecords = 6, 
   onRefresh,
+  onOpenApiKeyDialog,
   isLoading = false 
 }: ApiStatusProps = {}) {
   const [currentTime, setCurrentTime] = useState(new Date())
@@ -55,16 +57,27 @@ export function ApiStatus({
             <Database className="w-5 h-5 text-blue-600" />
             <span>실시간 API 연동 상태</span>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onRefresh}
-            disabled={isLoading}
-            className="h-8"
-          >
-            <RefreshCw className={`w-4 h-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
-            새로고침
-          </Button>
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onOpenApiKeyDialog}
+              className="h-8"
+            >
+              <Key className="w-4 h-4 mr-1" />
+              API 키 설정
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onRefresh}
+              disabled={isLoading}
+              className="h-8"
+            >
+              <RefreshCw className={`w-4 h-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
+              새로고침
+            </Button>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
